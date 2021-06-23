@@ -495,6 +495,17 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
 
   circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 
+  /* NOTE(shortor): Print circuit relays by printing list circ->cpath */
+  log_notice(LD_CIRC, "SHORTOR (by fingerprint): %s\n", circuit_list_path(circ, 1));
+  int i = 1;
+  // HACK(shortor) Unroll the first loop to simplify printing logic. This is because cpath is
+  // a circular buffer.
+  log_notice(LD_CIRC, "SHORTOR (hop #%d): %s\n", i++, &circ->cpath->extend_info->nickname);
+  for (crypt_path_t *cur = circ->cpath->next; cur != circ->cpath; cur = cur->next) {
+    /* NOTE(shortor) Each node in cpath contains an *extend_info */
+    log_notice(LD_CIRC, "SHORTOR (hop #%d): %s\n", i++, &cur->extend_info->nickname);
+  }
+
   if ((err_reason = circuit_handle_first_hop(circ)) < 0) {
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
     return NULL;

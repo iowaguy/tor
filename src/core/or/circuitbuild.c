@@ -398,6 +398,16 @@ onion_populate_cpath(origin_circuit_t *circ)
     }
   }
 
+  /* NOTE(shortor): This is where we should add vias. Needs to be here because
+   * `onion_extend_cpath()` gets called for every relay we add. This is the
+   * first spot where the path decision is stable. And no checks have been
+   * performed yet. */
+
+  /* NOTE(shortor): Print circuit relays */
+  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n", circuit_list_path(circ, 1));
+  log_shortor_circuit(circ->cpath, "modified");
+  log_shortor_circuit(circ->cpath_vanilla, "vanilla");
+
   /* The path is complete */
   tor_assert(r == 1);
 
@@ -478,8 +488,6 @@ log_shortor_circuit(crypt_path_t *cpath, char *circuit_type)
     /* NOTE(shortor) Each node in cpath contains an *extend_info */
     log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++, &cur->extend_info->nickname);
   }
-
-
 }
 /** Build a new circuit for <b>purpose</b>. If <b>exit</b> is defined, then use
  * that as your exit router, else choose a suitable exit node. The <b>flags</b>
@@ -507,11 +515,6 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_NOPATH);
     return NULL;
   }
-
-  /* NOTE(shortor): Print circuit relays */
-  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n", circuit_list_path(circ, 1));
-  log_shortor_circuit(circ->cpath, "modified");
-  log_shortor_circuit(circ->cpath_vanilla, "vanilla");
 
   circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 

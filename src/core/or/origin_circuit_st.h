@@ -128,6 +128,11 @@ struct origin_circuit_t {
    */
   crypt_path_t *cpath;
 
+  /** NOTE(shortor) The double-linked list of crypt_path_t entries from vanilla
+   * Tor. Does not include ShorTor routing adjustments.
+   */
+  crypt_path_t *cpath_vanilla;
+
   /** Holds all rendezvous data on either client or service side. */
   rend_data_t *rend_data;
 

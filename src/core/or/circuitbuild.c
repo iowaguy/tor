@@ -466,6 +466,21 @@ origin_circuit_init(uint8_t purpose, int flags)
   return circ;
 }
 
+/** Log nicknames of all circuit hops. */
+void
+log_shortor_circuit(crypt_path_t *cpath, char *circuit_type)
+{
+  int i = 1;
+  // HACK(shortor) Unroll the first loop to simplify printing logic. This is because cpath is
+  // a circular buffer.
+  log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++, &cpath->extend_info->nickname);
+  for (crypt_path_t *cur = cpath->next; cur != cpath; cur = cur->next) {
+    /* NOTE(shortor) Each node in cpath contains an *extend_info */
+    log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++, &cur->extend_info->nickname);
+  }
+
+
+}
 /** Build a new circuit for <b>purpose</b>. If <b>exit</b> is defined, then use
  * that as your exit router, else choose a suitable exit node. The <b>flags</b>
  * argument is a bitfield of CIRCLAUNCH_* flags, see
@@ -495,16 +510,10 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
 
   circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 
-  /* NOTE(shortor): Print circuit relays by printing list circ->cpath */
-  log_notice(LD_CIRC, "SHORTOR (by fingerprint): %s\n", circuit_list_path(circ, 1));
-  int i = 1;
-  // HACK(shortor) Unroll the first loop to simplify printing logic. This is because cpath is
-  // a circular buffer.
-  log_notice(LD_CIRC, "SHORTOR (hop #%d): %s\n", i++, &circ->cpath->extend_info->nickname);
-  for (crypt_path_t *cur = circ->cpath->next; cur != circ->cpath; cur = cur->next) {
-    /* NOTE(shortor) Each node in cpath contains an *extend_info */
-    log_notice(LD_CIRC, "SHORTOR (hop #%d): %s\n", i++, &cur->extend_info->nickname);
-  }
+  /* NOTE(shortor): Print circuit relays */
+  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n", circuit_list_path(circ, 1));
+  log_shortor_circuit(circ->cpath, "modified");
+  log_shortor_circuit(circ->cpath_vanilla, "vanilla");
 
   if ((err_reason = circuit_handle_first_hop(circ)) < 0) {
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
@@ -2446,6 +2455,7 @@ onion_extend_cpath(origin_circuit_t *circ)
   cpath_build_state_t *state = circ->build_state;
   int cur_len = circuit_get_cpath_len(circ);
   extend_info_t *info = NULL;
+  extend_info_t *info_vanilla = NULL;
 
   if (cur_len >= state->desired_path_len) {
     log_debug(LD_CIRC, "Path is complete: %d steps long",
@@ -2489,7 +2499,12 @@ onion_extend_cpath(origin_circuit_t *circ)
             cur_len+1, build_state_get_exit_nickname(state));
 
   cpath_append_hop(&circ->cpath, info);
+
+  info_vanilla = extend_info_dup(info);
+  cpath_append_hop(&circ->cpath_vanilla, info_vanilla);
+
   extend_info_free(info);
+  extend_info_free(info_vanilla);
   return 0;
 }
 

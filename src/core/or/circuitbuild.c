@@ -508,12 +508,12 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
     return NULL;
   }
 
-  circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
-
   /* NOTE(shortor): Print circuit relays */
   log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n", circuit_list_path(circ, 1));
   log_shortor_circuit(circ->cpath, "modified");
   log_shortor_circuit(circ->cpath_vanilla, "vanilla");
+
+  circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 
   if ((err_reason = circuit_handle_first_hop(circ)) < 0) {
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
@@ -2455,7 +2455,6 @@ onion_extend_cpath(origin_circuit_t *circ)
   cpath_build_state_t *state = circ->build_state;
   int cur_len = circuit_get_cpath_len(circ);
   extend_info_t *info = NULL;
-  extend_info_t *info_vanilla = NULL;
 
   if (cur_len >= state->desired_path_len) {
     log_debug(LD_CIRC, "Path is complete: %d steps long",
@@ -2499,12 +2498,9 @@ onion_extend_cpath(origin_circuit_t *circ)
             cur_len+1, build_state_get_exit_nickname(state));
 
   cpath_append_hop(&circ->cpath, info);
-
-  info_vanilla = extend_info_dup(info);
-  cpath_append_hop(&circ->cpath_vanilla, info_vanilla);
+  cpath_append_hop(&circ->cpath_vanilla, info);
 
   extend_info_free(info);
-  extend_info_free(info_vanilla);
   return 0;
 }
 

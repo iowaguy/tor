@@ -385,6 +385,7 @@ static int
 onion_populate_cpath(origin_circuit_t *circ)
 {
   int r = 0;
+  crypt_path_t *prev_hop;
 
   /* onion_extend_cpath assumes these are non-NULL */
   tor_assert(circ);
@@ -396,6 +397,19 @@ onion_populate_cpath(origin_circuit_t *circ)
       log_info(LD_CIRC,"Generating cpath hop failed.");
       return -1;
     }
+  }
+
+  /* NOTE(shortor): Reset cpath, we will repopulate it with a new path that may
+   * or may not include vias. Hopefully this is being freed correctly. The
+   * reason we want to free this list is because it's easier to use the built-in
+   * functions to add new relays to the path. It would be trickier to overwrite
+   * the `crypt_path_t` struct in-place. */
+  prev_hop = circ->cpath;
+  circ->cpath = NULL;
+  prev_hop->prev->next = NULL;
+  for (crypt_path_t *cur = prev_hop->next; cur != NULL; cur = cur->next) {
+    free(prev_hop);
+    prev_hop = cur;
   }
 
   /* NOTE(shortor): This is where we should add vias. Needs to be here because

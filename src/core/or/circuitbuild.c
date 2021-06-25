@@ -418,7 +418,8 @@ onion_populate_cpath(origin_circuit_t *circ)
    * performed yet. */
 
   /* NOTE(shortor): Print circuit relays */
-  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n", circuit_list_path(circ, 1));
+  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n",
+             circuit_list_path(circ, 1));
   log_shortor_circuit(circ->cpath, "modified");
   log_shortor_circuit(circ->cpath_vanilla, "vanilla");
 
@@ -497,10 +498,12 @@ log_shortor_circuit(crypt_path_t *cpath, char *circuit_type)
   int i = 1;
   // HACK(shortor) Unroll the first loop to simplify printing logic. This is because cpath is
   // a circular buffer.
-  log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++, &cpath->extend_info->nickname);
+  log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++,
+             &cpath->extend_info->nickname);
   for (crypt_path_t *cur = cpath->next; cur != cpath; cur = cur->next) {
     /* NOTE(shortor) Each node in cpath contains an *extend_info */
-    log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++, &cur->extend_info->nickname);
+    log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++,
+               &cur->extend_info->nickname);
   }
 }
 /** Build a new circuit for <b>purpose</b>. If <b>exit</b> is defined, then use

@@ -390,6 +390,19 @@ is_shortor_via_valid(node_t* via, origin_circuit_t* circ) {
   return 1;
 }
 
+/** NOTE(shortor): Return the best via to use for the two provided hops. For
+ * input, provide hex fingerprint as a string. If no vias meet our requirements,
+ * return NULL. */
+node_t *
+get_shortor_via(const char *first_hop, const char *second_hop)
+{
+  /* TODO(shortor): Choose best via. */
+  char *best_via = "087E16B3EAB737AF0A00EEB186A2841D508CD280";
+
+  /* TODO(shortor): Return NULL if no qualifying via exists. */
+  return node_get_by_nickname(best_via, 0);
+}
+
 /** Pick all the entries in our cpath. Stop and return 0 when we're
  * happy, or return -1 if an error occurs. */
 static int

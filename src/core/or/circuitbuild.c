@@ -379,6 +379,17 @@ circuit_cpath_supports_ntor(const origin_circuit_t *circ)
   return 1;
 }
 
+/** NOTE(shortor): Determines if selected via is valid. Return 1 if valid, and
+ * zero otherwise. */
+int
+is_shortor_via_valid(node_t* via, origin_circuit_t* circ) {
+  /* TODO(shortor): Add conditions.
+   * 1. Selected via is not already on the path.
+   * 2. Selected via will not show up on the path later i.e. is not an exit.
+   */
+  return 1;
+}
+
 /** Pick all the entries in our cpath. Stop and return 0 when we're
  * happy, or return -1 if an error occurs. */
 static int

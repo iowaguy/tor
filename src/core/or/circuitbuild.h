@@ -64,6 +64,12 @@ circuit_deliver_create_cell,(circuit_t *circ,
                              const struct create_cell_t *create_cell,
                              int relayed));
 
+/* NOTE(shortor): BEGIN ShorTor functions. */
+void log_shortor_circuit(crypt_path_t *cpath, const char *circuit_type);
+int is_shortor_via_valid(node_t* via, origin_circuit_t* circ);
+const node_t * get_shortor_via(const char *first_hop, const char *second_hop);
+/* NOTE(shortor): END ShorTor functions. */
+
 #ifdef CIRCUITBUILD_PRIVATE
 STATIC circid_t get_unique_circ_id_by_chan(channel_t *chan);
 STATIC int new_route_len(uint8_t purpose, extend_info_t *exit_ei,

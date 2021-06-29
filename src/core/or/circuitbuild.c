@@ -383,6 +383,10 @@ circuit_cpath_supports_ntor(const origin_circuit_t *circ)
  * zero otherwise. */
 int
 is_shortor_via_valid(node_t* via, origin_circuit_t* circ) {
+  if (via == NULL) {
+    return 0;
+  }
+
   /* TODO(shortor): Add conditions.
    * 1. Selected via is not already on the path.
    * 2. Selected via will not show up on the path later i.e. is not an exit.
@@ -393,13 +397,19 @@ is_shortor_via_valid(node_t* via, origin_circuit_t* circ) {
 /** NOTE(shortor): Return the best via to use for the two provided hops. For
  * input, provide hex fingerprint as a string. If no vias meet our requirements,
  * return NULL. */
-node_t *
+const node_t *
 get_shortor_via(const char *first_hop, const char *second_hop)
 {
   /* TODO(shortor): Choose best via. */
-  char *best_via = "087E16B3EAB737AF0A00EEB186A2841D508CD280";
+  const char *best_via = "E4DACDF6EE17C53FF1F85090D7DEF9F3D44EBF8E";
+  //const char *best_via = NULL;
 
-  /* TODO(shortor): Return NULL if no qualifying via exists. */
+  /* NOTE(shortor): Return NULL if no qualifying via exists. */
+  if (best_via == NULL) {
+    return NULL;
+  }
+
+  /* NOTE(shortor): This function can also take in a fingerprint. */
   return node_get_by_nickname(best_via, 0);
 }
 
@@ -409,7 +419,8 @@ static int
 onion_populate_cpath(origin_circuit_t *circ)
 {
   int r = 0;
-  crypt_path_t *prev_hop;
+  crypt_path_t *prev;
+  extend_info_t *info;
 
   /* onion_extend_cpath assumes these are non-NULL */
   tor_assert(circ);
@@ -428,21 +439,55 @@ onion_populate_cpath(origin_circuit_t *circ)
    * reason we want to free this list is because it's easier to use the built-in
    * functions to add new relays to the path. It would be trickier to overwrite
    * the `crypt_path_t` struct in-place. */
-  prev_hop = circ->cpath;
+  prev = circ->cpath;
   circ->cpath = NULL;
-  prev_hop->prev->next = NULL;
-  for (crypt_path_t *cur = prev_hop->next; cur != NULL; cur = cur->next) {
-    free(prev_hop);
-    prev_hop = cur;
+  prev->prev->next = NULL;
+  for (crypt_path_t *cur = prev->next; cur != NULL; cur = cur->next) {
+    free(prev);
+    prev = cur;
   }
 
   /* NOTE(shortor): This is where we should add vias. Needs to be here because
    * `onion_extend_cpath()` gets called for every relay we add. This is the
-   * first spot where the path decision is stable. And no checks have been
-   * performed yet. */
+   * first spot where the path decision is stable, and no checks have been
+   * performed yet. We'll want our path to go through the checks, so we have to
+   * do this here. */
+  prev = circ->cpath_vanilla;
+  info = extend_info_dup(prev->extend_info);
+  cpath_append_hop(&circ->cpath, info);
+  extend_info_free(info);
+  for (crypt_path_t *cur = prev->next; cur != circ->cpath_vanilla;
+       cur = cur->next) {
+    const node_t *via = NULL;
+    /* TODO(shortor): Need to include an exclusion list of vias we can't
+     * choose. */
+    via = get_shortor_via(prev->extend_info->identity_digest,
+                          cur->extend_info->identity_digest);
+
+    if (via) {
+      /* NOTE(shortor): This means there is a useful (and valid) via, so we
+       * should add it to the path. */
+      circ->build_state->desired_path_len++;
+      info = extend_info_from_node(via, 0);
+      cpath_append_hop(&circ->cpath, info);
+      log_notice(LD_CIRC, "SHORTOR Added a via with nickname: %s", info->nickname);
+      extend_info_free(info);
+    } else{
+      log_notice(LD_CIRC, "SHORTOR Did not add a via");
+    }
+
+    /* NOTE(shortor): Whether or not there is a via, we should add the relays
+     * chosen by Tor's normal path selection to the path. */
+    info = extend_info_dup(cur->extend_info);
+    cpath_append_hop(&circ->cpath, info);
+    extend_info_free(info);
+
+    prev = cur;
+  }
+
 
   /* NOTE(shortor): Print circuit relays */
-  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s\n",
+  log_notice(LD_CIRC, "SHORTOR modified (by fingerprint): %s",
              circuit_list_path(circ, 1));
   log_shortor_circuit(circ->cpath, "modified");
   log_shortor_circuit(circ->cpath_vanilla, "vanilla");
@@ -517,19 +562,20 @@ origin_circuit_init(uint8_t purpose, int flags)
 
 /** Log nicknames of all circuit hops. */
 void
-log_shortor_circuit(crypt_path_t *cpath, char *circuit_type)
+log_shortor_circuit(crypt_path_t *cpath, const char *circuit_type)
 {
   int i = 1;
   // HACK(shortor) Unroll the first loop to simplify printing logic. This is because cpath is
   // a circular buffer.
-  log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++,
-             &cpath->extend_info->nickname);
+  log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s", circuit_type, i++,
+             (const char *)cpath->extend_info->nickname);
   for (crypt_path_t *cur = cpath->next; cur != cpath; cur = cur->next) {
     /* NOTE(shortor) Each node in cpath contains an *extend_info */
-    log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s\n", circuit_type, i++,
-               &cur->extend_info->nickname);
+    log_notice(LD_CIRC, "SHORTOR %s (hop #%d): %s", circuit_type, i++,
+               (const char *)cur->extend_info->nickname);
   }
 }
+
 /** Build a new circuit for <b>purpose</b>. If <b>exit</b> is defined, then use
  * that as your exit router, else choose a suitable exit node. The <b>flags</b>
  * argument is a bitfield of CIRCLAUNCH_* flags, see

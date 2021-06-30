@@ -398,19 +398,23 @@ is_shortor_via_valid(node_t* via, origin_circuit_t* circ) {
  * input, provide hex fingerprint as a string. If no vias meet our requirements,
  * return NULL. */
 const node_t *
-get_shortor_via(const char *first_hop, const char *second_hop)
+get_shortor_via(const char *first_hop, const char *second_hop,
+                origin_circuit_t *circ)
 {
   /* TODO(shortor): Choose best via. */
-  const char *best_via = "E4DACDF6EE17C53FF1F85090D7DEF9F3D44EBF8E";
+  //const char *best_via = "3C725FEC59C8DBC087F64227564E4B0767B51866";
   //const char *best_via = NULL;
-
+  return choose_good_middle_server(circ->base_.purpose, circ->build_state,
+                                   circ->cpath_vanilla,
+                                   3 /* vanilla will always have length of
+                                      * three */);
   /* NOTE(shortor): Return NULL if no qualifying via exists. */
-  if (best_via == NULL) {
-    return NULL;
-  }
+  /* if (best_via == NULL) { */
+  /*   return NULL; */
+  /* } */
 
-  /* NOTE(shortor): This function can also take in a fingerprint. */
-  return node_get_by_nickname(best_via, 0);
+  /* /\* NOTE(shortor): This function can also take in a fingerprint. *\/ */
+  /* return node_get_by_nickname(best_via, 0); */
 }
 
 /** Pick all the entries in our cpath. Stop and return 0 when we're
@@ -462,7 +466,8 @@ onion_populate_cpath(origin_circuit_t *circ)
     /* TODO(shortor): Need to include an exclusion list of vias we can't
      * choose. */
     via = get_shortor_via(prev->extend_info->identity_digest,
-                          cur->extend_info->identity_digest);
+                          cur->extend_info->identity_digest,
+                          circ);
 
     if (via) {
       /* NOTE(shortor): This means there is a useful (and valid) via, so we

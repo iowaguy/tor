@@ -27,6 +27,10 @@
 #define CIRCUITBUILD_PRIVATE
 #define OCIRC_EVENT_PRIVATE
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <libpq-fe.h>
+
 #include "core/or/or.h"
 #include "app/config/config.h"
 #include "lib/confmgt/confmgt.h"

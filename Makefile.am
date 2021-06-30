@@ -20,7 +20,8 @@ AM_CPPFLAGS=\
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/ext \
 	-I$(top_srcdir)/src/ext/trunnel \
-	-I$(top_srcdir)/src/trunnel
+	-I$(top_srcdir)/src/trunnel \
+  $(POSTGRES_CFLAGS)
 
 AM_CFLAGS=					\
 	@TOR_SYSTEMD_CFLAGS@			\

@@ -2163,6 +2163,11 @@ if test "$using_custom_malloc" = "yes"; then
   TOR_CHECK_CFLAGS([-fno-builtin-malloc -fno-builtin-realloc -fno-builtin-calloc -fno-builtin-free])
 fi
 
+PKG_CHECK_MODULES(POSTGRES,
+      		        [libpq],
+		              have_libpq=yes,
+			            have_libpq=no)
+
 # By default, we're going to assume we don't have mlockall()
 # bionic and other platforms have various broken mlockall subsystems.
 # Some systems don't have a working mlockall, some aren't linkable,

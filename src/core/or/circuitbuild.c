@@ -86,6 +86,9 @@
 #include "core/or/or_circuit_st.h"
 #include "core/or/origin_circuit_st.h"
 
+/* NOTE(shortor): This file includes includes the database connection. */
+#include "core/or/shortor_database.h"
+
 static int circuit_send_first_onion_skin(origin_circuit_t *circ);
 static int circuit_build_no_more_hops(origin_circuit_t *circ);
 static int circuit_send_intermediate_onion_skin(origin_circuit_t *circ,
@@ -566,6 +569,12 @@ origin_circuit_init(uint8_t purpose, int flags)
   circ->build_state->is_ipv6_selftest =
     ((flags & CIRCLAUNCH_IS_IPV6_SELFTEST) ? 1 : 0);
   circ->base_.purpose = purpose;
+
+  /* NOTE(shortor): Assign this circuit's DB connection to the persistent
+   * connection of this node. */
+  circ->conn = shortor_conn;
+  circ->statement_name = shortor_statement_name;
+
   return circ;
 }
 

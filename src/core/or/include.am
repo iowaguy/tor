@@ -34,7 +34,8 @@ LIBTOR_APP_A_SOURCES += 				\
 	src/core/or/scheduler_vanilla.c		\
 	src/core/or/sendme.c			\
 	src/core/or/status.c			\
-	src/core/or/versions.c
+	src/core/or/versions.c    \
+  src/core/or/shortor_database.c
 
 # ADD_C_FILE: INSERT HEADERS HERE.
 noinst_HEADERS +=					\
@@ -96,7 +97,8 @@ noinst_HEADERS +=					\
 	src/core/or/status.h				\
 	src/core/or/tor_version_st.h			\
 	src/core/or/var_cell_st.h			\
-	src/core/or/versions.h
+	src/core/or/versions.h        \
+  src/core/or/shortor_database.h
 
 if USE_TRACING_INSTRUMENTATION_LTTNG
 LIBTOR_APP_A_SOURCES += \

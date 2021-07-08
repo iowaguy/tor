@@ -85,6 +85,7 @@
 
 #include "core/or/or_connection_st.h"
 #include "core/or/port_cfg_st.h"
+#include "core/or/shortor_database.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -651,6 +652,9 @@ tor_init(int argc, char *argv[])
 
   /* Scan/clean unparseable descriptors; after reading config */
   routerparse_init();
+
+  /* NOTE(shortor): Init database. */
+  shortor_pg_init();
 
   return 0;
 }

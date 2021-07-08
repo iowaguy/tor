@@ -12,6 +12,10 @@
 #ifndef ORIGIN_CIRCUIT_ST_H
 #define ORIGIN_CIRCUIT_ST_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <libpq-fe.h>
+
 #include "core/or/or.h"
 
 #include "core/or/circuit_st.h"
@@ -132,6 +136,13 @@ struct origin_circuit_t {
    * Tor. Does not include ShorTor routing adjustments.
    */
   crypt_path_t *cpath_vanilla;
+
+  /** NOTE(shortor): One database connection per circuit. */
+  PGconn *conn;
+
+  /** NOTE(shortor): The database query needs a name so we can reference it
+   * later */
+  const char *statement_name;
 
   /** Holds all rendezvous data on either client or service side. */
   rend_data_t *rend_data;

@@ -12,6 +12,8 @@
 #ifndef TOR_CIRCUITBUILD_H
 #define TOR_CIRCUITBUILD_H
 
+#define SHORTOR_TEXT_RESULT 0
+
 struct ed25519_public_key_t;
 struct curve25519_public_key_t;
 

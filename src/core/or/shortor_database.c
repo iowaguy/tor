@@ -10,6 +10,9 @@
 PGconn *shortor_conn;
 const char *shortor_statement_name = "shortorFastest";
 
+/** NOTE(shortor): By default, do not use shortor routing. */
+int use_shortor_routing = 0;
+
 /** NOTE(shortor): Initialize postgres connection. */
 void
 shortor_pg_init(void)

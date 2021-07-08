@@ -12,6 +12,10 @@ extern PGconn *shortor_conn;
  * always use. */
 extern const char *shortor_statement_name;
 
+/** NOTE(shortor): A boolean indicator of whether shortor routing should be
+ * used. Set to one if shortor routing will be used, zero otherwise. */
+extern int use_shortor_routing;
+
 /** NOTE(shortor): Initialize database connection. */
 void shortor_pg_init(void);
 

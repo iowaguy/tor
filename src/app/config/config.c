@@ -81,6 +81,10 @@
 #include "core/or/policies.h"
 #include "core/or/relay.h"
 #include "core/or/scheduler.h"
+
+/* NOTE(shortor) Reference shortor variables. */
+#include "core/or/shortor_database.h"
+
 #include "feature/client/addressmap.h"
 #include "feature/client/bridges.h"
 #include "feature/client/entrynodes.h"
@@ -2510,6 +2514,10 @@ static const struct {
   { .name="--dbg-dump-subsystem-list",
     .command=CMD_IMMEDIATE,
     .quiet=QUIET_HUSH },
+
+  /* NOTE(shortor): CLI option for doing ShorTor routing. */
+  { .name="--shortor" },
+
   { .name=NULL },
 };
 
@@ -4574,6 +4582,10 @@ options_init_from_torrc(int argc, char **argv)
       retval = -1;
       goto err;
     }
+  }
+
+  if (config_line_find(cmdline_only_options, "--shortor")) {
+    use_shortor_routing = 1;
   }
 
  err:

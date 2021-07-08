@@ -430,26 +430,13 @@ get_shortor_via(const char *first_hop, const char *second_hop,
   /* return node_get_by_nickname(best_via, 0); */
 }
 
-/** Pick all the entries in our cpath. Stop and return 0 when we're
- * happy, or return -1 if an error occurs. */
-static int
-onion_populate_cpath(origin_circuit_t *circ)
+/** NOTE(shortor): Remove old vanilla route and replace with the ShorTor route
+ * that includes vias. */
+void
+calculate_shortor_route(origin_circuit_t *circ)
 {
-  int r = 0;
   crypt_path_t *prev;
   extend_info_t *info;
-
-  /* onion_extend_cpath assumes these are non-NULL */
-  tor_assert(circ);
-  tor_assert(circ->build_state);
-
-  while (r == 0) {
-    r = onion_extend_cpath(circ);
-    if (r < 0) {
-      log_info(LD_CIRC,"Generating cpath hop failed.");
-      return -1;
-    }
-  }
 
   /* NOTE(shortor): Reset cpath, we will repopulate it with a new path that may
    * or may not include vias. Hopefully this is being freed correctly. The
@@ -509,6 +496,31 @@ onion_populate_cpath(origin_circuit_t *circ)
              circuit_list_path(circ, 1));
   log_shortor_circuit(circ->cpath, "modified");
   log_shortor_circuit(circ->cpath_vanilla, "vanilla");
+}
+
+/** Pick all the entries in our cpath. Stop and return 0 when we're
+ * happy, or return -1 if an error occurs. */
+static int
+onion_populate_cpath(origin_circuit_t *circ)
+{
+  int r = 0;
+
+  /* onion_extend_cpath assumes these are non-NULL */
+  tor_assert(circ);
+  tor_assert(circ->build_state);
+
+  while (r == 0) {
+    r = onion_extend_cpath(circ);
+    if (r < 0) {
+      log_info(LD_CIRC,"Generating cpath hop failed.");
+      return -1;
+    }
+  }
+
+  /** NOTE(shortor): Check if shortor routing should be used. */
+  if (use_shortor_routing) {
+    calculate_shortor_route(circ);
+  }
 
   /* The path is complete */
   tor_assert(r == 1);

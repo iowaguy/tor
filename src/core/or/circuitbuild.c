@@ -411,7 +411,7 @@ get_shortor_via(const char *first_hop, const char *second_hop,
   /* NOTE(shortor): */
   PGresult *result = PQexecPrepared(circ->conn, circ->statement_name, 0 /* This will be a real number when I do the real query */,
                                     NULL, NULL, NULL, SHORTOR_TEXT_RESULT);
-  char *fingerprint = PQgetvalue(result, 0 /* row */, 1 /* column */);
+  char *fingerprint = PQgetvalue(result, 0 /* row */, 0 /* column */);
   log_notice(LD_CIRC, "SHORTOR choosing node: %s", fingerprint);
 
   /* TODO(shortor): Choose best via. */

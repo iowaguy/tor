@@ -23,6 +23,9 @@ AM_CPPFLAGS=\
 	-I$(top_srcdir)/src/trunnel \
   $(POSTGRES_CFLAGS)
 
+# NOTE(shortor): Linker needs this
+LIBS+=$(POSTGRES_LIBS)
+
 AM_CFLAGS=					\
 	@TOR_SYSTEMD_CFLAGS@			\
 	@CFLAGS_BUGTRAP@			\

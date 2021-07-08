@@ -2163,10 +2163,11 @@ if test "$using_custom_malloc" = "yes"; then
   TOR_CHECK_CFLAGS([-fno-builtin-malloc -fno-builtin-realloc -fno-builtin-calloc -fno-builtin-free])
 fi
 
+# NOTE(shortor): Check for postgres.
 PKG_CHECK_MODULES(POSTGRES,
-      		        [libpq],
-		              have_libpq=yes,
-			            have_libpq=no)
+                  [libpq],
+                  [have_libpq=yes],
+                  [have_libpq=no; AC_MSG_ERROR([You asked for postgresql but I can't find it.])])
 
 # By default, we're going to assume we don't have mlockall()
 # bionic and other platforms have various broken mlockall subsystems.

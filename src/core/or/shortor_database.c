@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libpq-fe.h>
+#include <string.h>
 
 #include "lib/log/log.h"
 
@@ -19,7 +20,7 @@ shortor_pg_init(void)
 {
   /* NOTE(shortor): Initialize database connection. */
   log_notice(LD_CIRC, "SHORTOR Initializing database connection.");
-  shortor_conn = PQconnectdb("hostaddr=10.233.1.2 user=shortor dbname=shortor");
+  shortor_conn = PQconnectdb("hostaddr=10.233.1.2 user=postgres dbname=shortor");
 
   /* NOTE(shortor): This can only happen if there is not enough memory
    * to allocate the PGconn structure.
@@ -46,9 +47,16 @@ shortor_pg_init(void)
    * once. */
   log_notice(LD_CIRC, "SHORTOR preparing query...");
   PQprepare(shortor_conn, shortor_statement_name,
-            "SELECT nickname, fingerprint, latency FROM chutney_test WHERE"
-            "latency = (SELECT MIN(latency) FROM chutney_test WHERE fingerprint"
+            "SELECT nickname, fingerprint, latency FROM chutney_test WHERE "
+            "latency = (SELECT MIN(latency) FROM chutney_test WHERE fingerprint "
             "NOT IN ($1, $2, $3, $4));",
             4, // Number of query params
             NULL); // passing NULL forces the server to infer the types.
+
+  const char *err_message = (const char *) PQerrorMessage(shortor_conn);
+  if (strcmp(err_message, "") != 0) {
+    log_notice(LD_CIRC, "SHORTOR connection error message: %s", err_message);
+    PQfinish(shortor_conn);
+    exit(1);
+  }
 }

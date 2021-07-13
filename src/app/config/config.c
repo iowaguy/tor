@@ -4476,6 +4476,14 @@ options_init_from_torrc(int argc, char **argv)
     print_usage();
     return 1;
   }
+
+  if (config_line_find(cmdline_only_options, "--shortor")) {
+    log_notice(LD_CONFIG, "SHORTOR perform shortor routing.");
+    use_shortor_routing = 1;
+    /* NOTE(shortor): Init database. */
+    shortor_pg_init();
+  }
+
   if (config_line_find(cmdline_only_options, "--list-torrc-options")) {
     /* For validating whether we've documented everything. */
     list_torrc_options();
@@ -4582,13 +4590,6 @@ options_init_from_torrc(int argc, char **argv)
       retval = -1;
       goto err;
     }
-  }
-
-  if (config_line_find(cmdline_only_options, "--shortor")) {
-    log_notice(LD_CONFIG, "SHORTOR perform shortor routing.");
-    use_shortor_routing = 1;
-    /* NOTE(shortor): Init database. */
-    shortor_pg_init();
   }
 
  err:

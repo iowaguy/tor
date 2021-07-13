@@ -408,26 +408,74 @@ const node_t *
 get_shortor_via(const char *first_hop, const char *second_hop,
                 origin_circuit_t *circ)
 {
-  /* NOTE(shortor): */
-  PGresult *result = PQexecPrepared(circ->conn, circ->statement_name, 0 /* This will be a real number when I do the real query */,
-                                    NULL, NULL, NULL, SHORTOR_TEXT_RESULT);
-  char *fingerprint = PQgetvalue(result, 0 /* row */, 0 /* column */);
-  log_notice(LD_CIRC, "SHORTOR choosing node: %s", fingerprint);
+  char *relays_plus_vias[4];
+  crypt_path_t *prev = circ->cpath_vanilla;
 
-  /* TODO(shortor): Choose best via. */
-  //const char *best_via = "3C725FEC59C8DBC087F64227564E4B0767B51866";
-  //const char *best_via = NULL;
-  return choose_good_middle_server(circ->base_.purpose, circ->build_state,
-                                   circ->cpath_vanilla,
-                                   3 /* vanilla will always have length of
-                                      * three */);
+  log_notice(LD_CIRC, "SHORTOR path nodes (iterating): %s", hex_str(prev->extend_info->identity_digest, DIGEST_LEN));
+  relays_plus_vias[0] = (char *) malloc(DIGEST_LEN * sizeof(char));
+  strcpy(relays_plus_vias[0], hex_str(prev->extend_info->identity_digest, DIGEST_LEN));
+  int i = 1;
+  for (crypt_path_t *cur = prev->next; cur != circ->cpath_vanilla;
+       cur = cur->next) {
+    if (i > 3) {
+      /* NOTE(shortor): The vanilla path cannot be greater than three hops. */
+      break;
+    }
+    log_notice(LD_CIRC, "SHORTOR path nodes (iterating): %s", hex_str(cur->extend_info->identity_digest, DIGEST_LEN));
+    relays_plus_vias[i] = (char *) malloc(DIGEST_LEN * sizeof(char));
+    strcpy(relays_plus_vias[i], hex_str(cur->extend_info->identity_digest, DIGEST_LEN));
+    i++;
+  }
+
+  /* NOTE(shortor): Don't need to worry about excluding the first via from the
+   * query if we're in the midst of selecting the first via. */
+  if (circ->first_via != NULL) {
+    relays_plus_vias[3] = hex_str(circ->first_via->identity, DIGEST_LEN);
+  } else {
+    relays_plus_vias[3] = "0";
+  }
+
+  /* HACK just here for debugging. */
+  for (int j = 0; j < 4; j++) {
+    log_notice(LD_CIRC, "SHORTOR path nodes: %s", relays_plus_vias[j]);
+  }
+  /* NOTE(shortor): Execute the query that finds the best via. */
+  PGresult *result = PQexecPrepared(circ->conn, circ->statement_name,
+                                    4 /* Number of params. 4 = 3 circuit
+                                       * relays + 1 other via. */,
+                                    relays_plus_vias /* An array of the param values */,
+                                    NULL /* paramLenghts, ignored for text
+                                          * formats */,
+                                    NULL /* NULL means types are infered. */,
+                                    SHORTOR_TEXT_RESULT);
+  log_notice(LD_CIRC, "SHORTOR query result message: %s",
+             PQresultErrorMessage(result));
+
+  char *nickname = PQgetvalue(result, 0 /* row */, 0 /* column */);
+  char *fingerprint = PQgetvalue(result, 0 /* row */, 1 /* column */);
+  log_notice(LD_CIRC, "SHORTOR choosing node: %s, %s", nickname, fingerprint);
+
+  /* NOTE(shortor): Free memory */
+  PQclear(result);
+  for (int j = 0; j < 4; j++) {
+    free(relays_plus_vias[j]);
+  }
+
+  log_notice(LD_CIRC, "SHORTOR choosing node: %s, %s", nickname, fingerprint);
+  /* /\* TODO(shortor): Choose best via. *\/ */
+  /* //const char *best_via = "3C725FEC59C8DBC087F64227564E4B0767B51866"; */
+  /* //const char *best_via = NULL; */
+  /* return choose_good_middle_server(circ->base_.purpose, circ->build_state, */
+  /*                                  circ->cpath_vanilla, */
+  /*                                  3 /\* vanilla will always have length of */
+  /*                                     * three *\/); */
   /* NOTE(shortor): Return NULL if no qualifying via exists. */
-  /* if (best_via == NULL) { */
-  /*   return NULL; */
-  /* } */
+  if (fingerprint == NULL) {
+    return NULL;
+  }
 
-  /* /\* NOTE(shortor): This function can also take in a fingerprint. *\/ */
-  /* return node_get_by_nickname(best_via, 0); */
+  /* NOTE(shortor): This function can also take in a fingerprint. */
+  return node_get_by_nickname(fingerprint, 0 /* flags */);
 }
 
 /** NOTE(shortor): Remove old vanilla route and replace with the ShorTor route
@@ -468,10 +516,15 @@ calculate_shortor_route(origin_circuit_t *circ)
     via = get_shortor_via(prev->extend_info->identity_digest,
                           cur->extend_info->identity_digest,
                           circ);
-
     if (via) {
       /* NOTE(shortor): This means there is a useful (and valid) via, so we
        * should add it to the path. */
+
+      if (circ->first_via == NULL) {
+        /* NOTE(shortor): This is the first via we've encountered. */
+        circ->first_via = via;
+      }
+
       circ->build_state->desired_path_len++;
       info = extend_info_from_node(via, 0);
       cpath_append_hop(&circ->cpath, info);
@@ -519,6 +572,7 @@ onion_populate_cpath(origin_circuit_t *circ)
 
   /** NOTE(shortor): Check if shortor routing should be used. */
   if (use_shortor_routing) {
+    log_info(LD_CIRC,"SHORTOR using shortor routing: %d.", use_shortor_routing);
     calculate_shortor_route(circ);
   }
 
@@ -592,6 +646,9 @@ origin_circuit_init(uint8_t purpose, int flags)
    * connection of this node. */
   circ->conn = shortor_conn;
   circ->statement_name = shortor_statement_name;
+
+  /* NOTE(shortor): Indicate that a via has not been assigned on the path. */
+  circ->first_via = NULL;
 
   return circ;
 }

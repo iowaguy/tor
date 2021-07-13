@@ -653,9 +653,6 @@ tor_init(int argc, char *argv[])
   /* Scan/clean unparseable descriptors; after reading config */
   routerparse_init();
 
-  /* NOTE(shortor): Init database. */
-  shortor_pg_init();
-
   return 0;
 }
 

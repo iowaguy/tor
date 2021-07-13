@@ -47,10 +47,11 @@ shortor_pg_init(void)
    * once. */
   log_notice(LD_CIRC, "SHORTOR preparing query...");
   PQprepare(shortor_conn, shortor_statement_name,
-            "SELECT nickname, fingerprint, latency FROM chutney_test WHERE "
-            "latency = (SELECT MIN(latency) FROM chutney_test WHERE fingerprint "
-            "NOT IN ($1, $2, $3, $4));",
-            4, // Number of query params
+            "SELECT via_fingerprint, latency_improvement FROM chutney_test "
+            "WHERE latency_improvement = (SELECT MIN(latency_improvement) FROM "
+            "chutney_test WHERE fingerprint1 = $1 AND fingerprint2 = $2 AND "
+            "via_fingerprint NOT IN ($3, $4, $5, $6));",
+            6, // Number of query params
             NULL); // passing NULL forces the server to infer the types.
 
   const char *err_message = (const char *) PQerrorMessage(shortor_conn);

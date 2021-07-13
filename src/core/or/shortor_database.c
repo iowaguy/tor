@@ -19,7 +19,7 @@ shortor_pg_init(void)
 {
   /* NOTE(shortor): Initialize database connection. */
   log_notice(LD_CIRC, "SHORTOR Initializing database connection.");
-  shortor_conn = PQconnectdb("hostaddr=10.233.1.2 user=shortor dbname=shortor");
+  shortor_conn = PQconnectdb("hostaddr=10.233.1.2 user=postgres dbname=shortor");
 
   /* NOTE(shortor): This can only happen if there is not enough memory
    * to allocate the PGconn structure.

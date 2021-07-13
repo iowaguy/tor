@@ -140,6 +140,10 @@ struct origin_circuit_t {
   /** NOTE(shortor): One database connection per circuit. */
   PGconn *conn;
 
+  /** NOTE(shortor): The first via on the path. It is here, so we can access it
+   * quickly. */
+  const node_t *first_via;
+
   /** NOTE(shortor): The database query needs a name so we can reference it
    * later */
   const char *statement_name;

@@ -30,6 +30,7 @@ shortor_pg_init(void)
   }
 
   /* NOTE(shortor): check if the connection attempt worked */
+  log_notice(LD_CIRC, "SHORTOR confirming successful connection...");
   if (PQstatus(shortor_conn) != CONNECTION_OK)
   {
     log_err(LD_CIRC, "SHORTOR database connection failed with: %s",
@@ -43,10 +44,11 @@ shortor_pg_init(void)
 
   /* NOTE(shortor): Prepare the query so it only needs to be parsed and planned
    * once. */
+  log_notice(LD_CIRC, "SHORTOR preparing query...");
   PQprepare(shortor_conn, shortor_statement_name,
-            "SELECT fingerprint FROM relays LIMIT 1;",
-            0, //int nParams, this will be a positive number when I integrate
-               //the real query.
-            NULL); // passing NULL should force the server to infer the types.
-                   // const Oid *paramTypes);
+            "SELECT nickname, fingerprint, latency FROM chutney_test WHERE"
+            "latency = (SELECT MIN(latency) FROM chutney_test WHERE fingerprint"
+            "NOT IN ($1, $2, $3, $4));",
+            4, // Number of query params
+            NULL); // passing NULL forces the server to infer the types.
 }

@@ -4585,7 +4585,10 @@ options_init_from_torrc(int argc, char **argv)
   }
 
   if (config_line_find(cmdline_only_options, "--shortor")) {
+    log_notice(LD_CONFIG, "SHORTOR perform shortor routing.");
     use_shortor_routing = 1;
+    /* NOTE(shortor): Init database. */
+    shortor_pg_init();
   }
 
  err:

@@ -317,11 +317,11 @@ DUMMY_TYPECHECK_INSTANCE(or_options_t);
  */
 static const config_var_t option_vars_[] = {
   /* NOTE(shortor): Config file properties */
-  V(ShorTorLatencyThreshold,     POSINT,     "10"),
-  V(ShorTorDBAddr,               STRING,   NULL),
-  V(ShorTorDBPort,               STRING,   NULL),
-  V(ShorTorDBUser,               STRING,   NULL),
-  V(ShorTorDB,                   STRING,   NULL),
+  V(ShorTorLatencyThreshold,     POSINT,   "10"),
+  V(ShorTorDBAddr,               STRING,   "127.0.0.1"),
+  V(ShorTorDBPort,               STRING,   "5432"),
+  V(ShorTorDBUser,               STRING,   "postgres"),
+  V(ShorTorDB,                   STRING,   "shortor"),
   /****************************************************/
 
   V(AccountingMax,               MEMUNIT,  "0 bytes"),

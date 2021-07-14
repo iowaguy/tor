@@ -68,6 +68,14 @@ struct or_options_t {
   tor_cmdline_mode_t command;
   char *command_arg; /**< Argument for command-line option. */
 
+  /* NOTE(shortor): Config file properties */
+  int ShorTorLatencyThreshold;
+  char *ShorTorDBAddr;
+  char *ShorTorDBPort;
+  char *ShorTorDBUser;
+  char *ShorTorDB;
+  /*****************************************/
+
   struct config_line_t *Logs; /**< New-style list of configuration lines
                         * for logs */
   int LogTimeGranularity; /**< Log resolution in milliseconds. */

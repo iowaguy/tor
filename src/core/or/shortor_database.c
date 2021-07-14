@@ -4,6 +4,7 @@
 #include <libpq-fe.h>
 #include <string.h>
 
+#include "app/config/config.h"
 #include "lib/log/log.h"
 
 #include "core/or/shortor_database.h"
@@ -18,9 +19,15 @@ int use_shortor_routing = 0;
 void
 shortor_pg_init(void)
 {
+  const or_options_t *options = get_options();
   /* NOTE(shortor): Initialize database connection. */
-  log_notice(LD_CIRC, "SHORTOR Initializing database connection.");
-  shortor_conn = PQconnectdb("hostaddr=10.233.1.2 user=postgres dbname=shortor");
+  log_notice(LD_CIRC, "SHORTOR Initializing database connection to: %s:%s.",
+             options->ShorTorDBAddr, options->ShorTorDBPort);
+  char conn_str[1024];
+  sprintf(conn_str, "hostaddr=%s port=%s user=%s dbname=%s",
+          options->ShorTorDBAddr, options->ShorTorDBPort,
+          options->ShorTorDBUser, options->ShorTorDB);
+  shortor_conn = PQconnectdb(conn_str);
 
   /* NOTE(shortor): This can only happen if there is not enough memory
    * to allocate the PGconn structure.

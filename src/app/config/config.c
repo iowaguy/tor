@@ -316,6 +316,14 @@ DUMMY_TYPECHECK_INSTANCE(or_options_t);
  * be chosen first.
  */
 static const config_var_t option_vars_[] = {
+  /* NOTE(shortor): Config file properties */
+  V(ShorTorLatencyThreshold,     POSINT,     "10"),
+  V(ShorTorDBAddr,               STRING,   NULL),
+  V(ShorTorDBPort,               STRING,   NULL),
+  V(ShorTorDBUser,               STRING,   NULL),
+  V(ShorTorDB,                   STRING,   NULL),
+  /****************************************************/
+
   V(AccountingMax,               MEMUNIT,  "0 bytes"),
   VAR("AccountingRule",          STRING,   AccountingRule_option,  "max"),
   V(AccountingStart,             STRING,   NULL),
@@ -4477,13 +4485,6 @@ options_init_from_torrc(int argc, char **argv)
     return 1;
   }
 
-  if (config_line_find(cmdline_only_options, "--shortor")) {
-    log_notice(LD_CONFIG, "SHORTOR perform shortor routing.");
-    use_shortor_routing = 1;
-    /* NOTE(shortor): Init database. */
-    shortor_pg_init();
-  }
-
   if (config_line_find(cmdline_only_options, "--list-torrc-options")) {
     /* For validating whether we've documented everything. */
     list_torrc_options();
@@ -4590,6 +4591,13 @@ options_init_from_torrc(int argc, char **argv)
       retval = -1;
       goto err;
     }
+  }
+
+  if (config_line_find(cmdline_only_options, "--shortor")) {
+    log_notice(LD_CONFIG, "SHORTOR perform shortor routing.");
+    use_shortor_routing = 1;
+    /* NOTE(shortor): Init database. */
+    shortor_pg_init();
   }
 
  err:

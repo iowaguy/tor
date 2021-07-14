@@ -396,6 +396,7 @@ get_shortor_via(const char *first_hop, const char *second_hop,
 {
   char *relays_plus_vias[6];
   crypt_path_t *prev = circ->cpath_vanilla;
+  const node_t *via;
 
   for (int j = 0; j < 6; j++) {
     relays_plus_vias[j] = (char *) tor_calloc(DIGEST_LEN, sizeof(char *));
@@ -444,15 +445,34 @@ get_shortor_via(const char *first_hop, const char *second_hop,
     log_err(LD_CIRC, "SHORTOR %s", err_message);
   }
 
-  //char *nickname = PQgetvalue(result, 0 /* row */, 0 /* column */);
   char *fingerprint = PQgetvalue(result, 0 /* row */, 0 /* column */);
-
-  /* NOTE(shortor): Return NULL if no qualifying via exists. */
-  if (fingerprint == NULL) {
+  char *latency_improvement_raw = PQgetvalue(result, 0 /* row */,
+                                             1 /* column */);
+  if (latency_improvement_raw == NULL) {
     log_notice(LD_CIRC, "SHORTOR no qualifying via exists.");
-    return NULL;
+
+    /* NOTE(shortor): Return NULL if no qualifying via exists. */
+    via = NULL;
   } else {
-    log_notice(LD_CIRC, "SHORTOR choosing node: %s", fingerprint);
+    int latency_improvement = atoi(latency_improvement_raw);
+    log_notice(LD_CIRC, "SHORTOR found via offering a latency improvement of: %d.",
+               latency_improvement);
+
+    if (latency_improvement < get_options()->ShorTorLatencyThreshold) {
+      /* NOTE(shortor): If there is not enough improvement from using this via
+       * (which is the fastest possible via), then signal that we did not find any
+       * satisfactory vias. */
+      log_notice(LD_CIRC, "SHORTOR latency improvement is under threshold.");
+
+      /* NOTE(shortor): Return NULL if no qualifying via exists. */
+      via = NULL;
+    } else {
+      /* NOTE(shortor): Via exists and is above threshold. */
+      log_notice(LD_CIRC, "SHORTOR choosing node: %s", fingerprint);
+
+      /* NOTE(shortor): Get node struct for chosen via. */
+      via = node_get_by_nickname(fingerprint, 0 /* flags */);
+    }
   }
 
   /* NOTE(shortor): Free memory */
@@ -461,8 +481,7 @@ get_shortor_via(const char *first_hop, const char *second_hop,
     tor_free(relays_plus_vias[j]);
   }
 
-  /* NOTE(shortor): Get node struct for chosen via. */
-  return node_get_by_nickname(fingerprint, 0 /* flags */);
+  return via;
 }
 
 /** NOTE(shortor): Remove old vanilla route and replace with the ShorTor route

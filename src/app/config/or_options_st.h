@@ -74,6 +74,7 @@ struct or_options_t {
   char *ShorTorDBPort;
   char *ShorTorDBUser;
   char *ShorTorDB;
+  int ShorTorEnable;
   /*****************************************/
 
   struct config_line_t *Logs; /**< New-style list of configuration lines

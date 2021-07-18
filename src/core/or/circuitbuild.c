@@ -585,9 +585,11 @@ onion_populate_cpath(origin_circuit_t *circ)
     }
   }
 
+
   /** NOTE(shortor): Check if shortor routing should be used. */
-  if (use_shortor_routing) {
-    log_info(LD_CIRC,"SHORTOR using shortor routing: %d.", use_shortor_routing);
+  const or_options_t *options = get_options();
+  if (use_shortor_routing || options->ShorTorEnable) {
+    log_info(LD_CIRC,"SHORTOR using shortor routing.");
     calculate_shortor_route(circ);
   }
 

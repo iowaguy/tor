@@ -322,6 +322,7 @@ static const config_var_t option_vars_[] = {
   V(ShorTorDBPort,               STRING,   "5432"),
   V(ShorTorDBUser,               STRING,   "postgres"),
   V(ShorTorDB,                   STRING,   "shortor"),
+  V(ShorTorEnable,               BOOL,     "0"),
   /****************************************************/
 
   V(AccountingMax,               MEMUNIT,  "0 bytes"),

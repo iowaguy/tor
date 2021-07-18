@@ -430,13 +430,6 @@ get_shortor_via(const char *first_hop, const char *second_hop,
     log_notice(LD_CIRC, "SHORTOR query params: %s", relays_plus_vias[j]);
   }
 
-  // TODO UNDO ME
-  strcpy(relays_plus_vias[0], "1");
-  strcpy(relays_plus_vias[1], "2");
-  strcpy(relays_plus_vias[2], "3");
-  strcpy(relays_plus_vias[3], "4");
-  strcpy(relays_plus_vias[4], "5");
-
   /* NOTE(shortor): Execute the query that finds the best via. */
   PGresult *result = PQexecPrepared(circ->conn, circ->statement_name,
                                     6 /* Number of params. 6 = 3 circuit

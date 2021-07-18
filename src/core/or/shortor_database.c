@@ -54,10 +54,18 @@ shortor_pg_init(void)
    * once. */
   log_notice(LD_CIRC, "SHORTOR preparing query...");
   PQprepare(shortor_conn, shortor_statement_name,
-            "SELECT relay_via_id, speedup FROM triplet_latency "
-            "WHERE speedup = (SELECT MAX(speedup) FROM "
-            "triplet_latency WHERE relay_from_id = $1 AND relay_to_id = $2 AND "
-            "relay_via_id NOT IN ($3, $4, $5, $6));",
+            "SELECT rvia.fingerprint FROM triplet_latency t "
+            "JOIN relays rvia ON t.relay_via_id = rvia.id "
+            "JOIN relays rto ON t.relay_to_id = rto.id "
+            "JOIN relays rfrom ON t.relay_from_id = rfrom.id "
+            "WHERE speedup = (SELECT MAX(speedup) FROM triplet_latency t "
+            "JOIN relays rfrom ON rfrom.id = t.relay_from_id "
+            "JOIN relays rto ON rto.id = t.relay_to_id "
+            "WHERE (rfrom.fingerprint = $1 AND rto.fingerprint = $2) "
+            "OR (rfrom.fingerprint = $2 AND rto.fingerprint = $1)) "
+            "AND ((rfrom.fingerprint = $1 AND rto.fingerprint = $2) "
+            "OR (rfrom.fingerprint = $2 AND rto.fingerprint = $1)) "
+            "AND rvia.fingerprint NOT IN ($3, $4, $5, $6);",
             6, // Number of query params
             NULL); // passing NULL forces the server to infer the types.
 
